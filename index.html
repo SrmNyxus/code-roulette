@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Tech Survival: Squid Game Edition</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600&display=swap');
+
+    body {
+      margin: 0;
+      height: 100vh;
+      background: #0f0f0f;
+      font-family: 'Orbitron', sans-serif;
+      overflow: hidden;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      color: #00ffae;
+      text-shadow: 0 0 10px #00ffae, 0 0 25px #00ffae;
+      margin-bottom: 10px;
+    }
+
+    h2 {
+      font-size: 3.5rem;
+      color: #ff007f;
+      text-shadow: 0 0 10px #ff007f, 0 0 25px #ff007f;
+      margin-bottom: 40px;
+    }
+
+    .spinner-container {
+      position: relative;
+      width: 350px;
+      height: 350px;
+    }
+
+    canvas {
+      border-radius: 50%;
+      box-shadow: 0 0 25px #00ffc3, 0 0 50px #ff007f;
+      background: #000;
+    }
+
+    .pointer {
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 20px solid transparent;
+      border-right: 20px solid transparent;
+      border-top: 30px solid #fff;
+      z-index: 2;
+      filter: drop-shadow(0 0 10px white);
+    }
+
+    .button {
+      margin-top: 30px;
+      padding: 12px 28px;
+      background: #ff007f;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: background 0.3s, box-shadow 0.3s;
+      z-index: 2;
+      text-shadow: 0 0 5px #fff, 0 0 15px #ff007f;
+      box-shadow: 0 0 10px #ff007f, 0 0 20px #ff007f inset;
+    }
+
+    .button:hover {
+      background: #e6006d;
+      box-shadow: 0 0 15px #ff007f, 0 0 30px #ff007f inset;
+    }
+
+    .result {
+      margin-top: 20px;
+      font-size: 1.4rem;
+      color: #00ffc3;
+      text-shadow: 0 0 5px #00ffc3;
+    }
+
+    .symbols {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .symbol {
+      position: absolute;
+      font-size: 3rem;
+      opacity: 0.08;
+      animation: float 12s ease-in-out infinite;
+    }
+
+    .triangle { color: #ff007f; text-shadow: 0 0 10px #ff007f; }
+    .circle   { color: #00ffc3; text-shadow: 0 0 10px #00ffc3; }
+    .square   { color: #ffffff; text-shadow: 0 0 10px #ffffff; }
+
+    @keyframes float {
+      0% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-15px) rotate(4deg); }
+      100% { transform: translateY(0) rotate(0deg); }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Tech Survival: Squid Game Edition</h1>
+  <h2>Code Roulette</h2>
+
+  <div class="spinner-container">
+    <div class="pointer"></div>
+    <canvas id="wheel" width="350" height="350"></canvas>
+  </div>
+
+  <button class="button" onclick="spin()">🎯 Spin</button>
+  <div class="result" id="result"></div>
+
+  <div class="symbols" id="symbolsContainer"></div>
+
+  <script>
+    const canvas = document.getElementById("wheel");
+    const ctx = canvas.getContext("2d");
+
+    const options = ["Set 1", "Set 2", "Set 3", "Set 4", "Set 5", "Set 6"];
+    const colors = ["#FF6B6B", "#FFD93D", "#6BCB77", "#4D96FF", "#C74B50", "#845EC2"];
+    const numOptions = options.length;
+    const arcSize = (2 * Math.PI) / numOptions;
+
+    let angle = 0;
+    let spinning = false;
+
+    function drawWheel() {
+      const center = canvas.width / 2;
+      const radius = center - 10;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let i = 0; i < numOptions; i++) {
+        const startAngle = angle + i * arcSize;
+        const endAngle = startAngle + arcSize;
+
+        ctx.beginPath();
+        ctx.moveTo(center, center);
+        ctx.arc(center, center, radius, startAngle, endAngle);
+        ctx.closePath();
+        ctx.fillStyle = colors[i % colors.length];
+        ctx.fill();
+
+        ctx.strokeStyle = "#ffffff33";
+        ctx.lineWidth = 2;
+        ctx.shadowColor = "#ffffff";
+        ctx.shadowBlur = 10;
+        ctx.stroke();
+
+        ctx.save();
+        ctx.translate(center, center);
+        ctx.rotate(startAngle + arcSize / 2);
+        ctx.textAlign = "right";
+        ctx.fillStyle = "#000";
+        ctx.font = "bold 16px Orbitron";
+        ctx.shadowColor = "#ffffff";
+        ctx.shadowBlur = 5;
+        ctx.fillText(options[i], radius - 15, 6);
+        ctx.restore();
+      }
+
+      ctx.beginPath();
+      ctx.arc(center, center, 30, 0, 2 * Math.PI);
+      ctx.fillStyle = "#fff";
+      ctx.shadowColor = "#00ffc3";
+      ctx.shadowBlur = 20;
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    function spin() {
+      if (spinning) return;
+      spinning = true;
+
+      const fullRotations = 8 + Math.random() * 2;
+      const finalAngle = angle + fullRotations * 2 * Math.PI;
+
+      const duration = 5000;
+      let startTime = null;
+      const initialAngle = angle;
+
+      function animate(timestamp) {
+        if (!startTime) startTime = timestamp;
+        const progress = (timestamp - startTime) / duration;
+        const easedProgress = easeOutCubic(Math.min(progress, 1));
+        angle = initialAngle + (finalAngle - initialAngle) * easedProgress;
+        drawWheel();
+
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          angle %= 2 * Math.PI;
+          spinning = false;
+
+          const correctedAngle = (2 * Math.PI - (angle - Math.PI / 2)) % (2 * Math.PI);
+          const selectedIndex = Math.floor(correctedAngle / arcSize);
+
+          document.getElementById("result").textContent = `🎮 You landed on: ${options[selectedIndex]}`;
+        }
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    function easeOutCubic(t) {
+      return 1 - Math.pow(1 - t, 3);
+    }
+
+    function createSymbols() {
+      const container = document.getElementById('symbolsContainer');
+      const shapes = ['▲', '●', '■'];
+      const classes = ['triangle', 'circle', 'square'];
+      const count = 30;
+
+      for (let i = 0; i < count; i++) {
+        const span = document.createElement('span');
+        const shapeIndex = Math.floor(Math.random() * shapes.length);
+        span.className = `symbol ${classes[shapeIndex]}`;
+        span.textContent = shapes[shapeIndex];
+        span.style.left = `${Math.random() * 100}%`;
+        span.style.top = `${Math.random() * 100}%`;
+        span.style.animationDelay = `${Math.random() * 12}s`;
+        span.style.fontSize = `${2 + Math.random() * 2}rem`;
+        container.appendChild(span);
+      }
+    }
+
+    createSymbols();
+
+    // Ensure Orbitron font is loaded before drawing wheel
+    document.fonts.ready.then(() => {
+      drawWheel();
+    });
+  </script>
+</body>
+</html>
